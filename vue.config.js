@@ -3,5 +3,5 @@ module.exports = {
     'vuetify'
   ],
   lintOnSave: false,
-  assetsPublicPath: './'
+  publicPath: ''
 }
