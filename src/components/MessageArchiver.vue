@@ -215,10 +215,10 @@ export default {
     isThereMoreMessages(response) {
       const check = typeof response.data["@odata.nextLink"];
       if (check != "undefined") {
-        console.log("more? yes", check);
+        // console.log("more? yes", check);
         return true;
       } else {
-        console.log("more? no", check);
+        // console.log("more? no", check);
         return false;
       }
     },
@@ -259,7 +259,6 @@ export default {
         if (content) {
           content = content.replace(/\n+/g, "");
           content = content.replace(/\t+/g, "");
-          console.log('fixed', content)
         }
 
         htmlString +=
