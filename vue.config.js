@@ -3,5 +3,7 @@ module.exports = {
     'vuetify'
   ],
   lintOnSave: false,
-  publicPath: 'dist/'
+  publicPath: process.env.NODE_ENV === 'production'
+  ? '/CVR-Teams-Archiver-App/'
+  : '/'
 }
