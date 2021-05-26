@@ -1,24 +1,5 @@
-# ms-teams-messages
+# CVR Teams Archiver App
 
-## Project setup
-```
-npm install
-```
+## Hosted on:
+https://stefanjf.github.io/CVR-Teams-Archiver-App/
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
-
-### Compiles and minifies for production
-```
-npm run build
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
