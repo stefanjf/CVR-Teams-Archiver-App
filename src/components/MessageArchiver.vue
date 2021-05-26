@@ -6,6 +6,16 @@
       </v-col> -->
 
       <v-col class="">
+     <v-alert
+        border="bottom"
+        color="grey"
+        type="info"
+        dark
+        dense
+      >
+        <div class="mb-1 text--grey" style="text-align: left">Need assistance or to report a problem? Contact stefan.j.fernandez.mil@cvr.mil on CVR Teams.</div>
+
+</v-alert>
         <v-expansion-panels class="pb-2">
           <v-expansion-panel class="grey lighten-2">
             <v-expansion-panel-header>
