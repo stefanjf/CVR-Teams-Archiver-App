@@ -8,7 +8,12 @@
    <h3>CVR Teams Channel Archiver</h3>
 
       <v-spacer></v-spacer>
-    
+            <v-btn color="grey darken-2" href="https://github.com/stefanjf/CVR-Teams-Archiver-App" target="_blank">
+          Source Code
+          <v-icon>
+            mdi-open-in-new
+          </v-icon>
+        </v-btn>
    
     </v-app-bar>
 
