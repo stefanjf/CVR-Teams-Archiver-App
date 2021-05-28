@@ -8,7 +8,7 @@
       <v-col class="">
      <v-alert
         border="bottom"
-        color="grey"
+        color="grey darken-1"
         type="info"
         dark
         dense
@@ -17,12 +17,36 @@
 
 </v-alert>
         <v-expansion-panels class="pb-2">
-          <v-expansion-panel class="grey lighten-2">
+
+           <v-expansion-panel class="grey lighten-2">
             <v-expansion-panel-header>
-              <span><v-icon color="red darken-2" left> mdi-help </v-icon> How to get an Access Token?</span>
+              <span><v-icon color="grey darken-2" left> mdi-help </v-icon> Frequently Asked Questions</span>
             </v-expansion-panel-header>
             <v-expansion-panel-content style="text-align: left">
-              <ul>
+                        <ul>
+                <li class="mb-2">
+                  <strong>Can I archive regular Chat groups? </strong></br>
+                  <span >Unfortunately I have not found a way to access regular Chat groups. This workaround uses the Graph API token which does not have access to Chats. </span>
+                </li>
+                <li class="mb-2">
+                  <strong>Can I migrate these Channel messages to AFNET/CHES Teams?</strong></br>
+                  <span>No, that would require Teams admin access.</span>
+                </li>
+                <li class="mb-2">
+                  <strong>What format should I choose?</strong></br>
+                  <span>Probably HTML. If you want a Word document, use HTML and then copy/paste into Word. The JSON version is for anyone who wants all the data to parse themselves.</span>
+                </li>
+              </ul>
+     
+            </v-expansion-panel-content>
+          </v-expansion-panel>
+
+           <v-expansion-panel class="grey lighten-2">
+            <v-expansion-panel-header>
+              <span><v-icon color="grey darken-2" left> mdi-information-outline </v-icon> How to get an Access Token?</span>
+            </v-expansion-panel-header>
+            <v-expansion-panel-content style="text-align: left">
+                     <ul>
                 <li>
                   <span
                     >1. Navigate to
@@ -38,6 +62,7 @@
               <img src="../../imgs/token.png" alt="ex" title="token" width="600" />
             </v-expansion-panel-content>
           </v-expansion-panel>
+          
         </v-expansion-panels>
 
         <v-text-field v-model="accessToken" label="Enter your access token"></v-text-field>
@@ -199,7 +224,7 @@ export default {
         if (this.isThereMoreMessages(firstPull)) {
           linkToNextBatch = firstPull.data["@odata.nextLink"];
 
-          let nextPullReplies
+          let nextPullReplies;
           //Loop until no messages left
           while (true) {
             //Get next pull of replies
@@ -265,7 +290,6 @@ export default {
         const displayName = this.lodash.get(msg, "from.user.displayName", "unknown");
         const msgTime = this.lodash.get(msg, "createdDateTime", "unknown");
 
-        
         if (content) {
           content = content.replace(/\n+/g, "");
           content = content.replace(/\t+/g, "");
