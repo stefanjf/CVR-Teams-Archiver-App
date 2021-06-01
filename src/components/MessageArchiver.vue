@@ -102,6 +102,25 @@
             </v-card-text>
           </v-card>
         </v-dialog>
+
+        <v-snackbar
+        v-model="showErrorSnackbar"
+        timeout="3000"
+      >
+        {{ errors }}
+  
+        <template v-slot:action="{ attrs }">
+          <v-btn
+            color="red"
+            text
+            v-bind="attrs"
+            @click="showErrorSnackbar = false"
+          >
+            Close
+          </v-btn>
+        </template>
+      </v-snackbar>
+
       </v-col>
     </v-row>
   </v-container>
@@ -119,6 +138,7 @@ export default {
     myListOfChannels: [],
     allMessagesRaw: [],
     errors: "",
+    showErrorSnackbar: false,
     isLoading: false,
     loadingText: "",
   }),
@@ -153,52 +173,62 @@ export default {
               })
               .catch((e) => {
                 this.errors = e;
+                this.showErrorSnackbar = true;
                 this.isLoading = false;
               });
           }
         })
         .catch((e) => {
           this.errors = e;
+          this.showErrorSnackbar = true;
           this.isLoading = false;
         });
     },
     async downloadRawMessages(item) {
       let linkToNextBatch = "";
       let url =
-        "https://graph.microsoft.com/beta/teams/" + item["teamID"] + "/channels/" + item["id"] + "/messages?$top=100";
-      let firstPull = await axios.get(url, { headers: this.headers });
+        "https://graph.microsoft.com/beta/teamszz/" + item["teamID"] + "/channels/" + item["id"] + "/messages?$top=100";
+      try {
+        let firstPull = await axios.get(url, { headers: this.headers });
 
-      for (const message of firstPull.data["value"]) {
-        this.allMessagesRaw.push(message);
-      }
+        for (const message of firstPull.data["value"]) {
+          this.allMessagesRaw.push(message);
+        }
 
-      if (this.isThereMoreMessages(firstPull)) {
-        linkToNextBatch = firstPull.data["@odata.nextLink"];
-        console.log("more messages found", firstPull);
+        if (this.isThereMoreMessages(firstPull)) {
+          linkToNextBatch = firstPull.data["@odata.nextLink"];
+          console.log("more messages found", firstPull);
 
-        let nextPull;
-        //Loop until no messages left
-        while (true) {
-          try {
-            nextPull = await axios.get(linkToNextBatch, {
-              headers: this.headers,
-            });
-          } catch (error) {
-            console.log(error);
-          }
+          let nextPull;
+          //Loop until no messages left
+          while (true) {
+            try {
+              nextPull = await axios.get(linkToNextBatch, {
+                headers: this.headers,
+              });
+            } catch (error) {
+              this.errors = err;
+              this.showErrorSnackbar = true;
+              this.isLoading = false;
+            }
 
-          for (const message of nextPull.data["value"]) {
-            this.allMessagesRaw.push(message);
-          }
+            for (const message of nextPull.data["value"]) {
+              this.allMessagesRaw.push(message);
+            }
 
-          if (this.isThereMoreMessages(nextPull)) {
-            linkToNextBatch = nextPull.data["@odata.nextLink"];
-          } else {
-            break;
+            if (this.isThereMoreMessages(nextPull)) {
+              linkToNextBatch = nextPull.data["@odata.nextLink"];
+            } else {
+              break;
+            }
           }
         }
+        await this.addRepliesToRawMessages(item["teamID"], item["id"]);
+      } catch (err) {
+        this.errors = err;
+        this.showErrorSnackbar = true;
+        this.isLoading = false;
       }
-      await this.addRepliesToRawMessages(item["teamID"], item["id"]);
     },
     async addRepliesToRawMessages(_groupID, _channelID) {
       console.log("start adding in replies");
@@ -213,37 +243,50 @@ export default {
           "/messages/" +
           msg["id"] +
           "/replies";
-        const firstPull = await axios.get(url, { headers: this.headers });
 
-        msg["replies"] = [];
-        for (const reply of firstPull.data["value"]) {
-          msg["replies"].push(reply);
-        }
+        try {
+          let firstPull = await axios.get(url, { headers: this.headers });
 
-        //Check for more
-        if (this.isThereMoreMessages(firstPull)) {
-          linkToNextBatch = firstPull.data["@odata.nextLink"];
+          msg["replies"] = [];
+          for (const reply of firstPull.data["value"]) {
+            msg["replies"].push(reply);
+          }
 
-          let nextPullReplies;
-          //Loop until no messages left
-          while (true) {
-            //Get next pull of replies
-            nextPullReplies = await axios.get(linkToNextBatch, {
-              headers: this.headers,
-            });
+          //Check for more
+          if (this.isThereMoreMessages(firstPull)) {
+            linkToNextBatch = firstPull.data["@odata.nextLink"];
 
-            //Add this batch to the main array of messages
-            for (const replies2 of nextPullReplies.data["value"]) {
-              msg["replies"].push(replies2);
-            }
+            let nextPullReplies;
+            //Loop until no messages left
+            while (true) {
+              //Get next pull of replies
+              try {
+                nextPullReplies = await axios.get(linkToNextBatch, {
+                  headers: this.headers,
+                });
 
-            //Check for more or break
-            if (this.isThereMoreMessages(nextPullReplies)) {
-              linkToNextBatch = nextPullReplies.data["@odata.nextLink"];
-            } else {
-              break;
+                //Add this batch to the main array of messages
+                for (const replies2 of nextPullReplies.data["value"]) {
+                  msg["replies"].push(replies2);
+                }
+
+                //Check for more or break
+                if (this.isThereMoreMessages(nextPullReplies)) {
+                  linkToNextBatch = nextPullReplies.data["@odata.nextLink"];
+                } else {
+                  break;
+                }
+              } catch (error) {
+                this.errors = err;
+                this.showErrorSnackbar = true;
+                this.isLoading = false;
+              }
             }
           }
+        } catch (error) {
+          this.errors = err;
+          this.showErrorSnackbar = true;
+          this.isLoading = false;
         }
       }
     },
@@ -275,59 +318,61 @@ export default {
       this.isLoading = true;
       this.loadingText = "Downloading all messages. This may take a while...";
 
-      await this.downloadRawMessages(item);
-      let htmlString = "";
+      this.downloadRawMessages(item).then(() => {
+         let htmlString = "";
 
-      //Sort root messages
-      this.allMessagesRaw.sort(function compare(a, b) {
-        var dateA = new Date(a.createdDateTime);
-        var dateB = new Date(b.createdDateTime);
-        return dateA - dateB;
-      });
-
-      for (const msg of this.allMessagesRaw) {
-        let content = this.lodash.get(msg, "body.content", "unknown");
-        const displayName = this.lodash.get(msg, "from.user.displayName", "unknown");
-        const msgTime = this.lodash.get(msg, "createdDateTime", "unknown");
-
-        if (content) {
-          content = content.replace(/\n+/g, "");
-          content = content.replace(/\t+/g, "");
-        }
-
-        htmlString +=
-          "<hr><hr><h3>" + displayName + ":</h3><h5>Created: " + msgTime + "</h5>" + content + "<blockquote>";
-
-        // Sort replies
-        msg["replies"].sort(function compare(a, b) {
+        //Sort root messages
+        this.allMessagesRaw.sort(function compare(a, b) {
           var dateA = new Date(a.createdDateTime);
           var dateB = new Date(b.createdDateTime);
           return dateA - dateB;
         });
 
-        for (const reply of msg["replies"]) {
-          const user = this.lodash.get(reply, "from.user.displayName", "unknown");
-          let replyContent = this.lodash.get(reply, "body.content", "unknown");
-          const replyTime = this.lodash.get(reply, "createdDateTime", "unknown");
+        for (const msg of this.allMessagesRaw) {
+          let content = this.lodash.get(msg, "body.content", "unknown");
+          const displayName = this.lodash.get(msg, "from.user.displayName", "unknown");
+          const msgTime = this.lodash.get(msg, "createdDateTime", "unknown");
 
-          if (replyContent) {
-            replyContent = replyContent.replace(/\n+/g, "");
-            replyContent = replyContent.replace(/\t+/g, "");
+          if (content) {
+            content = content.replace(/\n+/g, "");
+            content = content.replace(/\t+/g, "");
           }
 
-          htmlString += "<h3>Reply From: " + user + "</h3>" + "<h5>Created: " + replyTime + "</h5>" + replyContent;
+          htmlString +=
+            "<hr><hr><h3>" + displayName + ":</h3><h5>Created: " + msgTime + "</h5>" + content + "<blockquote>";
+
+          // Sort replies
+          msg["replies"].sort(function compare(a, b) {
+            var dateA = new Date(a.createdDateTime);
+            var dateB = new Date(b.createdDateTime);
+            return dateA - dateB;
+          });
+
+          for (const reply of msg["replies"]) {
+            const user = this.lodash.get(reply, "from.user.displayName", "unknown");
+            let replyContent = this.lodash.get(reply, "body.content", "unknown");
+            const replyTime = this.lodash.get(reply, "createdDateTime", "unknown");
+
+            if (replyContent) {
+              replyContent = replyContent.replace(/\n+/g, "");
+              replyContent = replyContent.replace(/\t+/g, "");
+            }
+
+            htmlString += "<h3>Reply From: " + user + "</h3>" + "<h5>Created: " + replyTime + "</h5>" + replyContent;
+          }
+          htmlString += "</blockquote>";
         }
-        htmlString += "</blockquote>";
-      }
 
-      this.isLoading = false;
+        this.isLoading = false;
 
-      var blob = new Blob([JSON.stringify(htmlString)], {
-        type: "text/plain;charset=utf-8",
-      });
-      const export_date = new Date();
-      FileSaver.saveAs(blob, `${item.teamName}_${item.displayName}_archive_${export_date.toISOString()}.html`);
-    },
+        var blob = new Blob([JSON.stringify(htmlString)], {
+          type: "text/plain;charset=utf-8",
+        });
+        const export_date = new Date();
+        FileSaver.saveAs(blob, `${item.teamName}_${item.displayName}_archive_${export_date.toISOString()}.html`);
+      })
+       
+    }
   },
 };
 </script>
