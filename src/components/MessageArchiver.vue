@@ -13,7 +13,7 @@
         dark
         dense
       >
-        <div class="mb-1 text--grey" style="text-align: left">Need assistance or to report a problem? Contact stefan.j.fernandez.mil@cvr.mil on CVR Teams.</div>
+        <div class="mb-1 text--grey" style="text-align: left">Need assistance or to report a problem? Contact stefan.j.fernandez.mil@cvr.mil on CVR Teams or stefan.fernandez.1@us.af.mil.</div>
 
 </v-alert>
         <v-expansion-panels class="pb-2">
@@ -94,6 +94,67 @@
           </template>
         </v-simple-table>
 
+         <v-dialog
+        v-model="initialWarning"
+        width="500"
+      >
+        <v-card>
+          <v-card-title class="headline grey lighten-2">
+            Caution
+          </v-card-title>
+  
+          <v-card-text class="mt-2">
+            This is not an official DoD website, and you should always think twice before entering your access token into a random website.
+            <br><br>
+            Feel free to verify the source code here: <strong>https://github.com/stefanjf/CVR-Teams-Archiver-App</strong> 
+
+            <br><br>
+            Or reach out to me at <strong>stefan.fernandez.1@us.af.mil</strong> and I can verify that this website is non-malicious and secure.
+          </v-card-text>
+
+          <v-divider></v-divider>
+  
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn
+              color="primary"
+              text
+              @click="clickPopup()"
+            >
+              I understand
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+               <v-dialog
+        v-model="initialWarning2"
+        width="500"
+      >
+        <v-card>
+          <v-card-title class="headline grey lighten-2">
+            FOUO/CUI
+          </v-card-title>
+  
+          <v-card-text class="mt-2">
+            If your channel contains FOUO/CUI information then only use this app from an appropriate computer system.
+          </v-card-text>
+
+          <v-divider></v-divider>
+  
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn
+              color="primary"
+              text
+              @click="initialWarning2 = false"
+            >
+              I understand
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
         <v-dialog v-model="isLoading" hide-overlay persistent width="300">
           <v-card color="primary" dark>
             <v-card-text>
@@ -121,6 +182,8 @@ export default {
     errors: "",
     isLoading: false,
     loadingText: "",
+    initialWarning: true,
+    initialWarning2: false,
   }),
   computed: {
     // a computed getter
@@ -129,6 +192,10 @@ export default {
     },
   },
   methods: {
+    clickPopup: function () {
+      this.initialWarning = false;
+      this.initialWarning2 = true;
+    },
     getListOfTeams: function () {
       this.isLoading = true;
       this.loadingText = "Getting your Teams and Channels";
@@ -289,6 +356,7 @@ export default {
         let content = this.lodash.get(msg, "body.content", "unknown");
         const displayName = this.lodash.get(msg, "from.user.displayName", "unknown");
         const msgTime = this.lodash.get(msg, "createdDateTime", "unknown");
+        const subject = this.lodash.get(msg, "subject", "") ? this.lodash.get(msg, "subject", "") + "<br>" : "";
 
         if (content) {
           content = content.replace(/\n+/g, "");
@@ -296,7 +364,16 @@ export default {
         }
 
         htmlString +=
-          "<hr><hr><h3>" + displayName + ":</h3><h5>Created: " + msgTime + "</h5>" + content + "<blockquote>";
+          "<hr><hr><h3 style='margin-bottom: 3'>" +
+          displayName +
+          ":</h3><p style='margin-top: 0'>Sent: " +
+          msgTime +
+          "</p>" +
+          "<b>" +
+          subject +
+          "</b>" +
+          content +
+          "<blockquote>";
 
         // Sort replies
         msg["replies"].sort(function compare(a, b) {
@@ -315,14 +392,21 @@ export default {
             replyContent = replyContent.replace(/\t+/g, "");
           }
 
-          htmlString += "<h3>Reply From: " + user + "</h3>" + "<h5>Created: " + replyTime + "</h5>" + replyContent;
+          htmlString +=
+            "<h3 style='margin-bottom: 3'>Reply From: " +
+            user +
+            "</h3>" +
+            "<p style='margin-top: 0'>Sent: " +
+            replyTime +
+            "</p>" +
+            replyContent;
         }
         htmlString += "</blockquote>";
       }
 
       this.isLoading = false;
 
-      var blob = new Blob([JSON.stringify(htmlString)], {
+      var blob = new Blob([htmlString], {
         type: "text/plain;charset=utf-8",
       });
       const export_date = new Date();
