@@ -230,6 +230,8 @@ export default {
         });
     },
     async downloadRawMessages(item) {
+      this.clearData()
+
       let linkToNextBatch = "";
       let url =
         "https://graph.microsoft.com/beta/teams/" + item["teamID"] + "/channels/" + item["id"] + "/messages?$top=100";
@@ -412,6 +414,9 @@ export default {
       const export_date = new Date();
       FileSaver.saveAs(blob, `${item.teamName}_${item.displayName}_archive_${export_date.toISOString()}.html`);
     },
+    clearData() {
+      this.allMessagesRaw = []
+    }
   },
 };
 </script>
